@@ -20,17 +20,17 @@ struct ContentDetailView: View {
     // Chart state
     @State private var selectedTimeframe: Timeframe = .d1
     @State private var selectedPoint: PricePoint?
-    
+    @State private var selectedIndex: Int? = nil
     // Cached filtered history
     @State private var displayedHistory: [PricePoint] = []
 
     // MARK: - Series wrapper matching tutorial shape
-    struct PetData: Identifiable { let id = UUID(); let year: Int; let population: Double }
-    private var priceSeriesData: [(type: String, petData: [PetData])] {
-        let seriesPoints: [PetData] = displayedHistory.enumerated().map { idx, p in
-            PetData(year: idx, population: p.price)
+    struct PriceData: Identifiable { let id = UUID(); let time: Int; let price: Double }
+    private var priceSeriesData: [(type: String, priceData: [PriceData])] {
+        let seriesPoints: [PriceData] = displayedHistory.enumerated().map { idx, p in
+            PriceData(time: idx, price: p.price)
         }
-        return [(type: "price", petData: seriesPoints)]
+        return [(type: "price", priceData: seriesPoints)]
     }
     
     var tokensToReceive: Int {
@@ -103,7 +103,6 @@ struct ContentDetailView: View {
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
-                            Spacer()
                             Button("Copy") { UIPasteboard.general.string = content.tokenAddress }
                                 .font(.system(size: 12, weight: .medium))
                         }
@@ -113,10 +112,11 @@ struct ContentDetailView: View {
                     // Timeframe selector
                     TimeFrameSelector(selectedTimeframe: $selectedTimeframe)
                         .padding(.horizontal)
-                    
+                    Spacer()
                     // Chart (background-free, draggable) - Using cached @State data
                     chartView
-                        .frame(height: 300)
+                        .frame(height: 400)
+                    
                         .padding(.horizontal)
                     
                     // Media (video/web) renderer - now smaller emphasis
@@ -229,22 +229,54 @@ struct ContentDetailView: View {
     @ViewBuilder
     private var chartView: some View {
         Chart(priceSeriesData, id: \.type) { dataSeries in
-            ForEach(dataSeries.petData) { data in
+            ForEach(dataSeries.priceData) { data in
                 LineMark(
-                    x: .value("Index", data.year),
-                    y: .value("Price", data.population)
+                    x: .value("Time", data.time),
+                    y: .value("Price", data.price)
                 )
+                .interpolationMethod(.catmullRom)
+                .lineStyle(StrokeStyle(lineWidth: 2.0, lineCap: .round))
+
+                if let sel = selectedIndex, sel == data.time {
+                    PointMark(
+                        x: .value("Time", data.time),
+                        y: .value("Price", data.price)
+                    )
+                    .symbolSize(60)
+                    .foregroundStyle(.primary)
+                }
             }
             .foregroundStyle(by: .value("Series", dataSeries.type))
             .symbol(by: .value("Series", dataSeries.type))
         }
-        .chartXScale(domain: 0...(max(1, priceSeriesData.first?.petData.count ?? 1)))
+        .chartXScale(domain: 0...(max(1, priceSeriesData.first?.priceData.count ?? 1)))
         .aspectRatio(1, contentMode: .fit)
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartOverlay { proxy in
+            GeometryReader { geo in
+                Rectangle().fill(.clear).contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                let x = value.location.x - geo[proxy.plotAreaFrame].origin.x
+                                if let val: Double = proxy.value(atX: x) {
+                                    let idx = Int(val.rounded())
+                                    let count = priceSeriesData.first?.priceData.count ?? 0
+                                    selectedIndex = max(0, min(max(0, count - 1), idx))
+                                }
+                            }
+                            .onEnded { _ in selectedIndex = nil }
+                    )
+            }
+        }
     }
     
     // MARK: - Chart helpers
     var currentDisplayedPrice: String {
-        if let sel = selectedPoint { return "$\(String(format: "%.4f", sel.price))" }
+        if let idx = selectedIndex, idx >= 0, idx < displayedHistory.count {
+            return "$\(String(format: "%.4f", displayedHistory[idx].price))"
+        }
         return content.formattedPrice
     }
     
