@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		B18E18FF2EAA0154000F3520 /* Privy in Frameworks */ = {isa = PBXBuildFile; productRef = B18E18FE2EAA0154000F3520 /* Privy */; };
+		B191E6B92EB0A70D0028EF4F /* YouTubePlayerKit in Frameworks */ = {isa = PBXBuildFile; productRef = B191E6B82EB0A70D0028EF4F /* YouTubePlayerKit */; };
 		B1C40F182EA46AB600CF5786 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = B1C40F172EA46AB600CF5786 /* Auth */; };
 		B1C40F1A2EA46AB600CF5786 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = B1C40F192EA46AB600CF5786 /* Functions */; };
 		B1C40F1C2EA46AB600CF5786 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = B1C40F1B2EA46AB600CF5786 /* PostgREST */; };
@@ -50,6 +51,7 @@
 			files = (
 				B1C40F1C2EA46AB600CF5786 /* PostgREST in Frameworks */,
 				B1C40F1A2EA46AB600CF5786 /* Functions in Frameworks */,
+				B191E6B92EB0A70D0028EF4F /* YouTubePlayerKit in Frameworks */,
 				B1C40F232EA46B1D00CF5786 /* Supabase in Frameworks */,
 				B18E18FF2EAA0154000F3520 /* Privy in Frameworks */,
 				B1C40F282EA46D2600CF5786 /* GoogleSignInSwift in Frameworks */,
@@ -116,6 +118,7 @@
 				B1C40F252EA46D2600CF5786 /* GoogleSignIn */,
 				B1C40F272EA46D2600CF5786 /* GoogleSignInSwift */,
 				B18E18FE2EAA0154000F3520 /* Privy */,
+				B191E6B82EB0A70D0028EF4F /* YouTubePlayerKit */,
 			);
 			productName = Instnce;
 			productReference = B118687E2E9E0A8900C56954 /* Instnce.app */;
@@ -149,6 +152,7 @@
 				B1C40F142EA469AF00CF5786 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				B1C40F242EA46D2600CF5786 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				B18E18FD2EAA0154000F3520 /* XCRemoteSwiftPackageReference "privy-ios" */,
+				B191E6B72EB0A70D0028EF4F /* XCRemoteSwiftPackageReference "YouTubePlayerKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B118687F2E9E0A8900C56954 /* Products */;
@@ -418,6 +422,14 @@
 				minimumVersion = 2.4.1;
 			};
 		};
+		B191E6B72EB0A70D0028EF4F /* XCRemoteSwiftPackageReference "YouTubePlayerKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SvenTiigi/YouTubePlayerKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.4;
+			};
+		};
 		B1C40F142EA469AF00CF5786 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
@@ -441,6 +453,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B18E18FD2EAA0154000F3520 /* XCRemoteSwiftPackageReference "privy-ios" */;
 			productName = Privy;
+		};
+		B191E6B82EB0A70D0028EF4F /* YouTubePlayerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B191E6B72EB0A70D0028EF4F /* XCRemoteSwiftPackageReference "YouTubePlayerKit" */;
+			productName = YouTubePlayerKit;
 		};
 		B1C40F172EA46AB600CF5786 /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;

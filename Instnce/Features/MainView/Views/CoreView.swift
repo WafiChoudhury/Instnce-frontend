@@ -2,7 +2,8 @@ import SwiftUI
 
 struct CoreView: View {
     @State private var selectedTab: Tab = .home
-    
+    @StateObject private var authViewModel = AuthViewModel()  // <-- Add this
+
     enum Tab {
         case home, wallet, profile
     }
@@ -17,7 +18,7 @@ struct CoreView: View {
                 case .wallet:
                    WalletView()
                 case .profile:
-                    Text("hey")
+                    ProfileView(authViewModel: authViewModel)  
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

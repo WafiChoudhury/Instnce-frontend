@@ -124,9 +124,3 @@ struct StatItem: View {
         }
     }
 }
-
-#Preview {
-    ContentCard(content: Content.mockData[0])
-        .padding()
-        .background(Color(.systemGroupedBackground))
-}

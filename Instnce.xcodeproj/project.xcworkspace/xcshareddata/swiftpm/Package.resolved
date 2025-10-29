@@ -1,5 +1,5 @@
 {
-  "originHash" : "32312e061c157b26cf98e6d6a62d81f5de591ebe6868983a70a9711ff4d63821",
+  "originHash" : "692737d5b534fe4ba779266e0b861558960185f63c2ab53a923e90b8cc70cdc5",
   "pins" : [
     {
       "identity" : "app-check",
@@ -134,6 +134,15 @@
       "state" : {
         "revision" : "4c27acf5394b645b70d8ba19dc249c0472d5f618",
         "version" : "1.7.0"
+      }
+    },
+    {
+      "identity" : "youtubeplayerkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SvenTiigi/YouTubePlayerKit.git",
+      "state" : {
+        "revision" : "0f9a98c58462686afc7d3a1355baf21f07e5d330",
+        "version" : "2.0.4"
       }
     }
   ],
