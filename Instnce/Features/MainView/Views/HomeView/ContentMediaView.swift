@@ -13,9 +13,10 @@ struct ContentMediaView: View {
     let thumbnailUrl: String?
     let videoName: String?
     var height: CGFloat = 180
+    var showPadding: Bool = false // Whether to show horizontal padding (false for cards, true for detail views)
 
     var body: some View {
-        let player = YouTubePlayer(source: .video(id: urlString))
+        let player = YouTubePlayer(source: .video(id: extractYouTubeID(from: urlString) ?? urlString))
         
         VStack {
             if let videoName = videoName,
@@ -24,25 +25,33 @@ struct ContentMediaView: View {
                 VideoPlayer(player: AVPlayer(url: url))
                     .frame(height: height)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal)
+                    .if(showPadding) { view in
+                        view.padding(.horizontal)
+                    }
             } else if let direct = directVideoURL(urlString) {
                 // Direct video URL (mp4/mov/hls)
                 VideoPlayer(player: AVPlayer(url: direct))
                     .frame(height: height)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal)
+                    .if(showPadding) { view in
+                        view.padding(.horizontal)
+                    }
             } else if isYouTube(urlString) {
                 // Native YouTube player (YouTubePlayerKit)
                 YouTubePlayerView(player)
                     .frame(height: max(height, 220))
                     .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal)
+                    .if(showPadding) { view in
+                        view.padding(.horizontal)
+                    }
             } else if isTikTok(urlString) || isTwitter(urlString) || isInstagram(urlString) {
                 // Web embed for platforms
                 WebView(url: URL(string: urlString))
                     .frame(height: max(height, 220))
                     .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal)
+                    .if(showPadding) { view in
+                        view.padding(.horizontal)
+                    }
             } else {
                 // Fallback image
                 AsyncImage(url: URL(string: thumbnailUrl ?? "")) { img in
@@ -50,15 +59,41 @@ struct ContentMediaView: View {
                         .scaledToFill()
                         .frame(height: height)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .padding(.horizontal)
+                        .if(showPadding) { view in
+                            view.padding(.horizontal)
+                        }
                 } placeholder: {
                     RoundedRectangle(cornerRadius: 14)
                         .fill(Color(.systemGray5))
                         .frame(height: height)
-                        .padding(.horizontal)
+                        .if(showPadding) { view in
+                            view.padding(.horizontal)
+                        }
                 }
             }
         }
+    }
+    
+    // Extract YouTube video ID from URL
+    private func extractYouTubeID(from urlString: String) -> String? {
+        // Handle youtube.com/watch?v=VIDEO_ID
+        if let url = URL(string: urlString),
+           url.host?.contains("youtube.com") == true,
+           let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let queryItems = components.queryItems,
+           let videoID = queryItems.first(where: { $0.name == "v" })?.value {
+            return videoID
+        }
+        // Handle youtu.be/VIDEO_ID
+        if let url = URL(string: urlString),
+           url.host == "youtu.be" {
+            return String(url.path.dropFirst()) // Remove leading "/"
+        }
+        // If URL is already just an ID, return it
+        if !urlString.contains("/") && !urlString.contains("?") {
+            return urlString
+        }
+        return nil
     }
 
     private func directVideoURL(_ urlStr: String) -> URL? {
@@ -71,6 +106,18 @@ struct ContentMediaView: View {
     private func isTikTok(_ url: String) -> Bool { url.contains("tiktok.com/") }
     private func isTwitter(_ url: String) -> Bool { url.contains("twitter.com/") || url.contains("x.com/") }
     private func isInstagram(_ url: String) -> Bool { url.contains("instagram.com/") }
+}
+
+// View extension for conditional modifiers
+extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
+    }
 }
 
 private struct WebView: UIViewRepresentable {

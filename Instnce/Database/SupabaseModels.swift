@@ -80,7 +80,7 @@ struct WalletRequest: Codable {
     let userId: String
     let walletAddress: String
     let chain: String
-    let balanceUsd: Int
+    let balanceSol: Double
     let createdAt: String
     let updatedAt: String
     
@@ -88,7 +88,7 @@ struct WalletRequest: Codable {
         case userId = "user_id"
         case walletAddress = "wallet_address"
         case chain
-        case balanceUsd = "balance_usd"
+        case balanceSol = "balance_sol"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }

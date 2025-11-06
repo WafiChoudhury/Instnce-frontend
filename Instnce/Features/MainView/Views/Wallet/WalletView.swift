@@ -9,7 +9,7 @@ import SwiftUI
 import PrivySDK
 
 struct WalletView: View {
-    @StateObject private var authViewModel = AuthViewModel()
+    @ObservedObject var authViewModel: AuthViewModel
     @State private var showPhoneLogin = false
     
     var body: some View {
@@ -18,17 +18,19 @@ struct WalletView: View {
                 if authViewModel.isLoading {
                     VStack(spacing: 16) {
                         ProgressView()
+                            .tint(.blue)
+                            .scaleEffect(1.2)
                         Text("Loading your wallet…")
-                            .font(.callout)
+                            .font(.system(size: 15))
                             .foregroundStyle(.secondary)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if authViewModel.isAuthenticated {
                     FinancesView(authViewModel: authViewModel)
                 } else {
-                    LoginPromptView(showPhoneLogin: $showPhoneLogin)
+                    WalletOnboardingCard(authViewModel: authViewModel, showPhoneLogin: $showPhoneLogin)
                 }
             }
-            .onAppear { authViewModel.initialize() }
             .navigationBarHidden(true)
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .alert("Error", isPresented: $authViewModel.showError) {
@@ -91,7 +93,7 @@ struct LoginPromptView: View {
             
             Spacer().frame(height: 20)
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())  // ← Change this
     }
 }
 

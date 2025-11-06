@@ -12,45 +12,21 @@ struct ContentCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Thumbnail
-            AsyncImage(url: URL(string: content.thumbnailUrl ?? "")) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-            } placeholder: {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.systemGray5).opacity(0.4))
-                    .frame(height: 180)
-            }
+            // Media (embedded video/player)
+            ContentMediaView(
+                urlString: content.url,
+                thumbnailUrl: content.thumbnailUrl,
+                videoName: content.videoName,
+                height: 240
+            )
+            .frame(height: 240)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
 
-            // Title & Description
-            VStack(alignment: .leading, spacing: 6) {
-                Text(content.title)
-                    .font(.system(size: 20, weight: .semibold))
+            // Price front-and-center
+            HStack(spacing: 10) {
+                Text(content.formattedPrice)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.primary)
-                    .lineLimit(2)
-
-                Text(content.description)
-                    .font(.system(size: 14))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-
-            // Price & Change
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Current Price")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-
-                    Text(content.formattedPrice)
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(.primary)
-                }
-
-                Spacer()
 
                 HStack(spacing: 5) {
                     Image(systemName: content.isPositiveChange ? "arrow.up.right" : "arrow.down.right")
@@ -65,6 +41,16 @@ struct ContentCard: View {
                     Capsule()
                         .fill((content.isPositiveChange ? Color.green : Color.red).opacity(0.12))
                 )
+                Spacer()
+            }
+
+            // Video title styled more like descriptive text
+            VStack(alignment: .leading, spacing: 6) {
+                Text(content.title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
             }
 
             // Divider
@@ -79,9 +65,7 @@ struct ContentCard: View {
             }
 
             // Buy Button
-            Button {
-                // Future investment action
-            } label: {
+            NavigationLink(destination: ContentDetailView(content: content)) {
                 HStack {
                     Text("Buy Now")
                         .font(.system(size: 15, weight: .semibold))

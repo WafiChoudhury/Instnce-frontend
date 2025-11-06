@@ -31,6 +31,12 @@ struct InstnceApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(authModel)
+                .onOpenURL { url in
+                    // Expecting: instnce://onramp-complete
+                    if url.scheme == "instnce", url.host == "onramp-complete" {
+                        NotificationCenter.default.post(name: .onrampCompleted, object: nil)
+                    }
+                }
         }
     }
 }

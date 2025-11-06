@@ -24,7 +24,7 @@ struct ContentDetailView: View {
     // Cached filtered history
     @State private var displayedHistory: [PricePoint] = []
 
-    // MARK: - Series wrapper matching tutorial shape
+    // MARK: - Series wrapper
     struct PriceData: Identifiable { let id = UUID(); let time: Int; let price: Double }
     private var priceSeriesData: [(type: String, priceData: [PriceData])] {
         let seriesPoints: [PriceData] = displayedHistory.enumerated().map { idx, p in
@@ -43,11 +43,13 @@ struct ContentDetailView: View {
             Color(.systemBackground).ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
+                VStack(spacing: 0) {
                     // Top controls
                     HStack {
                         Button(action: { dismiss() }) {
                             Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.primary)
                                 .padding(10)
                                 .background(Circle().fill(Color(.systemGray6)))
                         }
@@ -59,158 +61,174 @@ struct ContentDetailView: View {
                             // share
                         }) {
                             Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.primary)
                                 .padding(10)
                                 .background(Circle().fill(Color(.systemGray6)))
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 20)
                     
-                    // Title + price (minimal)
-                    VStack(alignment: .leading, spacing: 10) {
-                        // Title
-                        Text(content.title)
-                            .font(.system(size: 18, weight: .semibold))
-                            .lineLimit(2)
-                        
-                        // Price + change pill
-                        HStack(spacing: 10) {
+                    // Media (video/content) - moved above price
+                    ContentMediaView(
+                        urlString: content.url,
+                        thumbnailUrl: content.thumbnailUrl,
+                        videoName: content.videoName,
+                        height: 200,
+                        showPadding: true
+                    )
+                    .padding(.bottom, 20)
+                    
+                    // ROBINHOOD STYLE: Price section
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Price + change
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
                             Text(currentDisplayedPrice)
-                                .font(.system(size: 30, weight: .bold))
+                                .font(.system(size: 36, weight: .medium))
+                                .foregroundStyle(.primary)
                             ChangePill(
                                 text: content.formattedPriceChange,
                                 positive: content.isPositiveChange
                             )
                         }
                         
+                        // Title below price (Robinhood style)
+                        Text(content.title)
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                        
                         // Meta (platform · creator)
                         HStack(spacing: 6) {
                             Image(systemName: content.platform.icon)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.secondary)
-                            Text("\(content.platform.displayName) · \(content.creatorName)")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        // Token (footnote)
-                        HStack(spacing: 6) {
-                            Text("Token")
-                                .font(.system(size: 11))
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(.tertiary)
-                            Text(content.tokenAddress)
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                            Button("Copy") { UIPasteboard.general.string = content.tokenAddress }
-                                .font(.system(size: 12, weight: .medium))
+                            Text("\(content.platform.displayName) · \(content.creatorName)")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.tertiary)
                         }
+                        .padding(.top, 2)
                     }
-                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
                     
-                    // Timeframe selector
-                    TimeFrameSelector(selectedTimeframe: $selectedTimeframe)
-                        .padding(.horizontal)
-                    Spacer()
-                    // Chart (background-free, draggable) - Using cached @State data
+                    // Chart (much larger, Robinhood style)
                     chartView
-                        .frame(height: 400)
+                        .frame(height: 280)
+                        .padding(.horizontal, 8)
+                        .padding(.bottom, 16)
                     
-                        .padding(.horizontal)
+                    // Timeframe selector (below chart, Robinhood style)
+                    RobinhoodTimeFrameSelector(selectedTimeframe: $selectedTimeframe)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 24)
                     
-                    // Media (video/web) renderer - now smaller emphasis
-                    ContentMediaView(
-                        urlString: content.url,
-                        thumbnailUrl: content.thumbnailUrl,
-                        videoName: content.videoName,
-                        height: 170
-                    )
-                    
-                    // Stats chips (minimal)
-                    HStack(spacing: 8) {
-                        StatChip(title: "Market Cap", value: content.formattedMarketCap)
-                        StatChip(title: "24h Vol", value: content.formattedVolume)
-                        Spacer()
+                    // Stats grid (Robinhood style)
+                    VStack(spacing: 12) {
+                        StatRow(
+                            label: "Market Cap",
+                            value: content.formattedMarketCap
+                        )
+                        Divider().padding(.horizontal, 20)
+                        StatRow(
+                            label: "24h Volume",
+                            value: content.formattedVolume
+                        )
+                        Divider().padding(.horizontal, 20)
+                        StatRow(
+                            label: "Token",
+                            value: content.tokenAddress,
+                            showCopy: true
+                        )
                     }
-                    .padding(.horizontal)
+                    .padding(.bottom, 24)
                     
-                    Spacer(minLength: 120) // leave space for bottom buy panel
+                    Spacer(minLength: 120)
                 }
-                .padding(.top, 12)
+                .padding(.top, 8)
             }
             
-            // Bottom buy panel (collapsible)
+            // Bottom buy panel (Robinhood green button style)
             VStack {
                 Spacer()
                 if isBuyExpanded {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         HStack {
-                            Text("Buy")
-                                .font(.system(size: 14, weight: .semibold))
+                            Text("Buy \(content.title)")
+                                .font(.system(size: 17, weight: .semibold))
                             Spacer()
-                            Button(action: { withAnimation { isBuyExpanded = false } }) {
-                                Image(systemName: "chevron.down")
+                            Button(action: { withAnimation(.spring(response: 0.3)) { isBuyExpanded = false } }) {
+                                Image(systemName: "xmark")
                                     .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
                         }
-                        .foregroundStyle(.secondary)
                         
-                        HStack(alignment: .center) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Investment")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.secondary)
-                                Text("$\(investmentAmount)")
-                                    .font(.system(size: 20, weight: .semibold))
-                            }
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text("Estimated tokens")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.secondary)
-                                Text("~\(tokensToReceive)")
-                                    .font(.system(size: 16, weight: .semibold))
-                            }
+                        // Amount input
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Amount in USD")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.secondary)
+                            TextField("0", text: $investmentAmount)
+                                .keyboardType(.decimalPad)
+                                .font(.system(size: 24, weight: .medium))
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .strokeBorder(Color(.systemGray4), lineWidth: 1)
+                                )
                         }
                         
-                        HStack(spacing: 8) {
-                            TextField("10", text: $investmentAmount)
-                                .keyboardType(.decimalPad)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 12)
-                                .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
-                                .frame(maxWidth: 120)
-                            
-                            Button(action: { showInvestmentSheet = true }) {
-                                Text("Buy")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(RoundedRectangle(cornerRadius: 10).fill(Color(.label)))
-                                    .foregroundStyle(Color(.systemBackground))
-                            }
+                        // Estimated tokens
+                        HStack {
+                            Text("Estimated tokens")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("~\(tokensToReceive)")
+                                .font(.system(size: 15, weight: .medium))
+                        }
+                        
+                        // Robinhood green buy button
+                        Button(action: { showInvestmentSheet = true }) {
+                            Text("Review Order")
+                                .font(.system(size: 17, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 24)
+                                        .fill(Color(red: 0.0, green: 0.78, blue: 0.33))
+                                )
+                                .foregroundStyle(.white)
                         }
                     }
-                    .padding(16)
-                    .background(BlurView(style: .systemThinMaterial))
-                    .cornerRadius(16)
-                    .padding(.horizontal)
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(.systemBackground))
+                            .shadow(color: .black.opacity(0.1), radius: 20, y: -5)
+                    )
+                    .padding(.horizontal, 12)
                     .padding(.bottom, 12)
                 } else {
-                    HStack {
-                        Spacer()
-                        Button(action: { withAnimation { isBuyExpanded = true } }) {
-                            Text("Buy")
-                                .font(.system(size: 15, weight: .semibold))
-                                .padding(.horizontal, 18)
-                                .padding(.vertical, 10)
-                                .background(Capsule().fill(Color(.label)))
-                                .foregroundStyle(Color(.systemBackground))
-                        }
+                    Button(action: { withAnimation(.spring(response: 0.3)) { isBuyExpanded = true } }) {
+                        Text("Buy")
+                            .font(.system(size: 17, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .fill(Color(red: 0.0, green: 0.78, blue: 0.33))
+                            )
+                            .foregroundStyle(.white)
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
                     .padding(.bottom, 16)
                 }
             }
@@ -225,32 +243,57 @@ struct ContentDetailView: View {
         }
     }
     
-    // MARK: - Chart View (tutorial pattern with our data)
+    // MARK: - Chart View (Robinhood style - subtle gradient)
     @ViewBuilder
     private var chartView: some View {
+        let baseColor = content.isPositiveChange ? Color(red: 0.0, green: 0.78, blue: 0.33) : Color(red: 1.0, green: 0.33, blue: 0.33)
+        let areaGradient = LinearGradient(
+            gradient: Gradient(colors: [baseColor.opacity(0.1), baseColor.opacity(0.0)]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        
         Chart(priceSeriesData, id: \.type) { dataSeries in
+            // Very subtle gradient area
+            ForEach(dataSeries.priceData) { data in
+                AreaMark(
+                    x: .value("Time", data.time),
+                    y: .value("Price", data.price)
+                )
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(areaGradient)
+            }
+
+            // Line on top (thicker for Robinhood style)
             ForEach(dataSeries.priceData) { data in
                 LineMark(
                     x: .value("Time", data.time),
                     y: .value("Price", data.price)
                 )
                 .interpolationMethod(.catmullRom)
-                .lineStyle(StrokeStyle(lineWidth: 2.0, lineCap: .round))
+                .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                .foregroundStyle(baseColor)
 
+                // Selection dot
                 if let sel = selectedIndex, sel == data.time {
                     PointMark(
                         x: .value("Time", data.time),
                         y: .value("Price", data.price)
                     )
-                    .symbolSize(60)
-                    .foregroundStyle(.primary)
+                    .symbolSize(80)
+                    .foregroundStyle(baseColor)
+                    
+                    PointMark(
+                        x: .value("Time", data.time),
+                        y: .value("Price", data.price)
+                    )
+                    .symbolSize(40)
+                    .foregroundStyle(Color(.systemBackground))
                 }
             }
-            .foregroundStyle(by: .value("Series", dataSeries.type))
-            .symbol(by: .value("Series", dataSeries.type))
         }
         .chartXScale(domain: 0...(max(1, priceSeriesData.first?.priceData.count ?? 1)))
-        .aspectRatio(1, contentMode: .fit)
+        .chartLegend(.hidden)
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartOverlay { proxy in
@@ -280,7 +323,6 @@ struct ContentDetailView: View {
         return content.formattedPrice
     }
     
-    // Update the cached history - called once on appear and when timeframe changes
     private func updateDisplayedHistory() {
         let points = content.priceHistory
         guard let maxDate = points.map({ $0.timestamp }).max() else {
@@ -311,14 +353,75 @@ struct ChangePill: View {
     
     var body: some View {
         Text(text)
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(positive ? .green : .red)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(positive ? Color(red: 0.0, green: 0.78, blue: 0.33) : Color(red: 1.0, green: 0.33, blue: 0.33))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill((positive ? Color.green : Color.red).opacity(0.1))
+                    .fill((positive ? Color(red: 0.0, green: 0.78, blue: 0.33) : Color(red: 1.0, green: 0.33, blue: 0.33)).opacity(0.12))
             )
+    }
+}
+
+// Robinhood-style timeframe selector
+struct RobinhoodTimeFrameSelector: View {
+    @Binding var selectedTimeframe: Timeframe
+    
+    let timeframes: [Timeframe] = [.d1, .w1, .m1, .m3, .y1, .y5]
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(timeframes, id: \.self) { tf in
+                Button(action: { selectedTimeframe = tf }) {
+                    Text(tf.rawValue)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(selectedTimeframe == tf ? .primary : .secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(selectedTimeframe == tf ? Color(.systemGray5) : Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(.systemGray6).opacity(0.5))
+        )
+    }
+}
+
+// Robinhood-style stat row
+struct StatRow: View {
+    let label: String
+    let value: String
+    var showCopy: Bool = false
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+            Spacer()
+            HStack(spacing: 8) {
+                Text(value)
+                    .font(.system(size: 15, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                if showCopy {
+                    Button(action: { UIPasteboard.general.string = value }) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.blue)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
     }
 }
 

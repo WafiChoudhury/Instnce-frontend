@@ -131,7 +131,8 @@ struct ProfileView: View {
         
         do {
             // Try to get data from Supabase Auth (Google sign-in)
-            if let _ = try? await supabase.auth.session {
+            let supabaseSession = try? await supabase.auth.session
+            if supabaseSession != nil {
                 let authProfile = try await fetchAuthUserProfile()
                 // Convert AuthUserProfile to UserProfile
                 userData = UserProfile(
@@ -145,10 +146,16 @@ struct ProfileView: View {
                 )
             } else if let user = authViewModel.currentUser {
                 // Fallback to Privy user (phone login)
-                userData = try await fetchUserProfile(privyUserId: user.id)
+                userData = try await fetchUserProfileCached(privyUserId: user.id)
+            } else {
+                // No session and no Privy user - user is not logged in
+                print("⚠️ No active session found, logging out")
+                await logoutUser()
             }
         } catch {
             print("⚠️ Failed to load profile: \(error.localizedDescription)")
+            // If we got here, likely user is not authenticated
+            await logoutUser()
         }
         
         isLoading = false

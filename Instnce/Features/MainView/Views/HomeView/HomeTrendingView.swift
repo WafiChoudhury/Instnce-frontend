@@ -11,8 +11,8 @@ import Supabase
 
 
 struct HomeTrendingView: View {
-    @State private var trendingContent: [Content] = []
-    @State private var isLoading = false
+    @ObservedObject var viewModel: HomeTrendingViewModel
+    @ObservedObject var authViewModel: AuthViewModel
 
     struct ContentRecord: Codable, Identifiable {
         let id: String
@@ -63,104 +63,41 @@ struct HomeTrendingView: View {
                     .padding(.horizontal)
 
                     // Trending Cards
-                    LazyVStack(spacing: 20) {
-                        ForEach(trendingContent) { content in
-                            NavigationLink(destination: ContentDetailView(content: content)) {
+                    if viewModel.isLoading && viewModel.trendingContent.isEmpty {
+                        loadingState
+                    } else {
+                        LazyVStack(spacing: 20) {
+                            ForEach(viewModel.trendingContent) { content in
                                 ContentCard(content: content)
+                                    .padding(.horizontal)
                             }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal)
                         }
                     }
                 }
                 .padding(.vertical, 20)
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
-            .onAppear {
-                fetchTrendingContent()
-            }
+            .background(Color(.systemBackground).ignoresSafeArea())
+            .task { await viewModel.loadIfNeeded() }
+            .refreshable { await viewModel.refresh() }
         }
     }
     
-    // MARK: - Data Fetching
-    private func fetchTrendingContent() {
-        
-        Task{
-            
-            isLoading = true
-            let contentRecords: [ContentRecord] = try await supabase
-                .from("content")
-                .select()
-                .eq("is_trending", value: true)
-                .order("engagement_score", ascending: false)
-                .limit(10)
-                .execute()
-                .value
-            
-            print(contentRecords)
-            var contents: [Content] = []
-          
-            for record in contentRecords {
-                // Fetch price history for this content
-                let priceHistoryRecords: [TokenPriceRecord] = try await supabase
-                    .from("token_prices")
-                    .select()
-                    .eq("content_id", value: record.id)
-                    .order("timestamp", ascending: true)
-                    .execute()
-                    .value
-                
-                // Convert TokenPriceRecords to PricePoints
-                let priceHistory = priceHistoryRecords.map { priceRecord in
-                    PricePoint(
-                        id: priceRecord.id,
-                        timestamp: ISO8601DateFormatter().date(from: priceRecord.timestamp) ?? Date(),
-                        price: priceRecord.price_usd,
-                        volume: priceRecord.volume_usd
-                    )
-                }
-                
-                // Map database record to Content model
-                let content = Content(
-                    id: record.id,
-                    url: record.url,
-                    title: record.title,
-                    description: record.description,
-                    thumbnailUrl: record.thumbnail_url,
-                    platform: Content.Platform(rawValue: record.platform) ?? .other,
-                    creatorName: record.creator_name,
-                    creatorHandle: record.creator_handle,
-                    tokenAddress: record.token_address,
-                    currentPrice: record.current_price_usd,
-                    priceChange24h: record.price_change_24h_percent,
-                    marketCap: record.market_cap_usd,
-                    volume24h: record.volume_24h_usd,
-                    totalSupply: Int(record.total_supply),
-                    holderCount: record.holder_count,
-                    viewCount: record.view_count,
-                    engagementScore: record.engagement_score,
-                    isTrending: record.is_trending,
-                    priceHistory: priceHistory,
-                    createdAt: ISO8601DateFormatter().date(from: record.created_at) ?? Date(),
-                    updatedAt: ISO8601DateFormatter().date(from: record.updated_at) ?? Date(),
-                    videoName: record.video_name
-                )
-                
-                contents.append(content)
-            }
-            
-            // Update state on main thread
-            await MainActor.run {
-                trendingContent = contents
-                isLoading = false
-            }
-            
+    private var loadingState: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .tint(.blue)
+            Text("Loading content...")
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
         }
-    
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
     }
+    
+    // Data fetch types remain for decoding records
 }
 
-#Preview {
-    HomeTrendingView()
-        .environmentObject(AuthModel())
-}
+//#Preview {
+//    HomeTrendingView(viewModel: HomeTrendingViewModel(), authViewModel: AuthViewModel())
+//        .environmentObject(AuthModel())
+//}

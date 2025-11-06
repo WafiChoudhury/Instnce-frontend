@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct CoreView: View {
+    @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var trendingViewModel = HomeTrendingViewModel()
     @State private var selectedTab: Tab = .home
-    @StateObject private var authViewModel = AuthViewModel()  // <-- Add this
 
     enum Tab {
         case home, wallet, profile
@@ -14,9 +15,9 @@ struct CoreView: View {
             Group {
                 switch selectedTab {
                 case .home:
-                    HomeTrendingView()
+                    HomeTrendingView(viewModel: trendingViewModel, authViewModel: authViewModel)
                 case .wallet:
-                   WalletView()
+                   WalletView(authViewModel: authViewModel)
                 case .profile:
                     ProfileView(authViewModel: authViewModel)  
                 }
@@ -24,8 +25,8 @@ struct CoreView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.systemBackground))
             
-            // Slim tab bar
-            HStack {
+            // Minimal tab bar
+            HStack(spacing: 0) {
                 TabBarButton(icon: "house", isSelected: selectedTab == .home) {
                     selectedTab = .home
                 }
@@ -38,17 +39,13 @@ struct CoreView: View {
                     selectedTab = .profile
                 }
             }
-            .frame(height: 52)
+            .frame(height: 80)
             .padding(.horizontal, 40)
-            .background(Color(.systemBackground).opacity(0.9))
-            .overlay(
-                Divider()
-                    .frame(height: 1)
-                    .foregroundColor(.gray.opacity(0.25)),
-                alignment: .top
-            )
+            .padding(.top, 10)
+            .background(Color(.systemBackground))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, y: -2)
         }
-        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .ignoresSafeArea(edges: .bottom)
     }
 }
 
@@ -59,19 +56,19 @@ private struct TabBarButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
                 Image(systemName: icon + (isSelected ? ".fill" : ""))
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 24, weight: .medium))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundColor(isSelected ? .accentColor : .gray)
+                    .foregroundColor(isSelected ? .blue : Color(.systemGray))
                 
-                // Small indicator dot when selected
                 Circle()
-                    .fill(isSelected ? Color.accentColor : .clear)
+                    .fill(Color.blue)
                     .frame(width: 4, height: 4)
-                    .animation(.easeInOut(duration: 0.2), value: isSelected)
+                    .opacity(isSelected ? 1 : 0)
             }
             .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

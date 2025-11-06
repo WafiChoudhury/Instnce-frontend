@@ -24,22 +24,6 @@ struct PhoneLoginView: View {
         return countryCode + cleaned
     }
     
-    // Formatted display version
-    private var displayPhoneNumber: String {
-        let cleaned = phoneNumber.filter { $0.isNumber }
-        guard !cleaned.isEmpty else { return "" }
-        
-        // Format as (XXX) XXX-XXXX for US numbers
-        if countryCode == "+1" && cleaned.count == 10 {
-            let areaCode = cleaned.prefix(3)
-            let middle = cleaned.dropFirst(3).prefix(3)
-            let last = cleaned.dropFirst(6)
-            return "(\(areaCode)) \(middle)-\(last)"
-        }
-        
-        return cleaned
-    }
-    
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 32) {
@@ -50,7 +34,7 @@ struct PhoneLoginView: View {
                         .font(.system(size: 28, weight: .bold))
                     
                     Text(showOTPField
-                         ? "We've sent a 6-digit code to \(countryCode) \(displayPhoneNumber)"
+                         ? "Enter the code sent to your phone"
                          : "Enter your phone number to continue")
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
@@ -99,29 +83,15 @@ struct PhoneLoginView: View {
                                     .font(.system(size: 17))
                                     .focused($isFocused)
                                     .onChange(of: phoneNumber) { _, newValue in
-                                        // Keep only digits
-                                        let filtered = newValue.filter { $0.isNumber }
-                                        if filtered != newValue {
-                                            phoneNumber = filtered
-                                        }
-                                        // Limit length based on country
-                                        let maxLength = countryCode == "+1" ? 10 : 15
-                                        if filtered.count > maxLength {
-                                            phoneNumber = String(filtered.prefix(maxLength))
-                                        }
+                                        handlePhoneInput(newValue)
+                                    }
+                                    .onChange(of: countryCode) { _, _ in
+                                        handlePhoneInput(phoneNumber)
                                     }
                             }
                             .padding(.vertical, 8)
                             
                             Divider()
-                            
-                            // Show formatted preview
-                            if !phoneNumber.isEmpty {
-                                Text("Will send to: \(fullPhoneNumber)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.top, 4)
-                            }
                         }
                         .padding(.horizontal)
                     } else {
@@ -138,13 +108,7 @@ struct PhoneLoginView: View {
                                 .focused($isFocused)
                                 .padding(.vertical, 8)
                                 .onChange(of: otpCode) { _, newValue in
-                                    // Keep only digits, max 6
-                                    let filtered = newValue.filter { $0.isNumber }
-                                    if filtered.count > 6 {
-                                        otpCode = String(filtered.prefix(6))
-                                    } else if filtered != newValue {
-                                        otpCode = filtered
-                                    }
+                                    handleOTPInput(newValue)
                                 }
                             
                             Divider()
@@ -203,6 +167,27 @@ struct PhoneLoginView: View {
             }
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationBarHidden(true)
+        }
+    }
+    
+    // MARK: - Input Handlers (optimized)
+    
+    // Single function to handle phone input
+    private func handlePhoneInput(_ newValue: String) {
+        let filtered = newValue.filter { $0.isNumber }
+        let maxLength = countryCode == "+1" ? 10 : 15
+        let limited = filtered.count > maxLength ? String(filtered.prefix(maxLength)) : filtered
+        
+        phoneNumber = limited
+    }
+    
+    // OPTIMIZATION: Single function to handle OTP input
+    private func handleOTPInput(_ newValue: String) {
+        let filtered = newValue.filter { $0.isNumber }
+        let limited = filtered.count > 6 ? String(filtered.prefix(6)) : filtered
+        
+        if limited != otpCode {
+            otpCode = limited
         }
     }
     

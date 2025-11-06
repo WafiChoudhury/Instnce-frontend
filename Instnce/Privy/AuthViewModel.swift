@@ -16,7 +16,7 @@ class AuthViewModel: ObservableObject {
     @Published var isAuthenticated = false
     @Published var isLoading = true
     @Published var currentUser: PrivyUser?
-    @Published var embeddedWallet: EmbeddedSolanaWallet?
+    @Published var embeddedWallet: EmbeddedSolanaWalletAccount?
     // Error handling
     @Published var errorMessage = ""
     @Published var showError = false
@@ -93,7 +93,7 @@ class AuthViewModel: ObservableObject {
             isAuthenticated = true
             
             // Automatically ensure wallet exists after login
-            await ensureWalletExists(user: user, phoneNumber: phoneNumber)  // <-- CHANGE 2: pass phoneNumber
+            await ensureWalletExists(user: user, phoneNumber: phoneNumber)  
             
             return true
         } catch {
@@ -115,7 +115,7 @@ class AuthViewModel: ObservableObject {
           
           if let wallet = existingWallet {
               print("✅ Existing wallet found: \(wallet.address)")
-              embeddedWallet = wallet as? any EmbeddedSolanaWallet
+              embeddedWallet = wallet
               
               // <-- CHANGE 4: Add Supabase sync for existing wallet
               await syncUserAndWallet(privyUser: user, walletAddress: wallet.address, phoneNumber: phoneNumber)
@@ -130,11 +130,15 @@ class AuthViewModel: ObservableObject {
     /// Creates a wallet automatically during setup
     private func createWalletAutomatically(for user: PrivyUser, phoneNumber: String? = nil) async {  // <-- CHANGE 6: add phoneNumber parameter
         do {
+          
             let wallet = try await user.createSolanaWallet()
             print("✅ Wallet created automatically: \(wallet.address)")
-            embeddedWallet = wallet
-            
-            // <-- CHANGE 7: Add Supabase sync after creating wallet
+            let refreshedUser = try await privy?.getUser()
+            embeddedWallet = refreshedUser?.linkedAccounts.compactMap {
+                if case .embeddedSolanaWallet(let acc) = $0 { return acc } else { return nil }
+            }.first
+
+            // <-- keep Supabase sync using the live wallet's address
             await syncUserAndWallet(privyUser: user, walletAddress: wallet.address, phoneNumber: phoneNumber)
             
         } catch {
@@ -151,7 +155,10 @@ class AuthViewModel: ObservableObject {
         do {
             let wallet = try await user.createSolanaWallet()
             print("✅ Wallet created: \(wallet.address)")
-            embeddedWallet = wallet
+            let refreshedUser = try await privy?.getUser()
+            embeddedWallet = refreshedUser?.linkedAccounts.compactMap {
+                if case .embeddedSolanaWallet(let acc) = $0 { return acc } else { return nil }
+            }.first
             return true
         } catch {
             showErrorMessage("Failed to create wallet: \(error.localizedDescription)")
